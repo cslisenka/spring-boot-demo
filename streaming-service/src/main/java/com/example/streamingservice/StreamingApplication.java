@@ -2,9 +2,6 @@ package com.example.streamingservice;
 
 import com.example.streamingservice.event.QuoteEvent;
 import com.example.streamingservice.event.QuoteReloadEvent;
-import io.micrometer.core.annotation.Timed;
-import io.micrometer.core.aop.TimedAspect;
-import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,11 +12,9 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.context.event.EventListener;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.HandlerMapping;
@@ -58,7 +53,6 @@ public class StreamingApplication {
 		SpringApplication.run(StreamingApplication.class, args);
 	}
 
-	@Async("quoteExecutor")
 	@EventListener
 	public void onApplicationLoad(ApplicationReadyEvent e) {
 		Set<String> setOfSymbols = new HashSet<>(Arrays.asList("AAPL", "IBM", "EPAM", "TSLA", "ORCL", "GM"));
@@ -74,8 +68,6 @@ public class StreamingApplication {
 				.forEach(eventBus::publishEvent);
 	}
 
-	@Timed(value = "quote_load", percentiles = {0.5, 0.95, 0.98})
-	@Async("quoteExecutor")
 	@EventListener
 	public void onQuoteReloadEvent(QuoteReloadEvent e) {
 		QuoteEvent quote = template.getForObject(URI.create(url + e.getSymbol()), QuoteEvent.class);
@@ -84,7 +76,6 @@ public class StreamingApplication {
 		eventBus.publishEvent(quote);
 	}
 
-	@Async("dataPushExecutor")
 	@EventListener
 	public void onQuoteUpdate(QuoteEvent e) {
 		log.info("sending update to clients {}", e);
@@ -133,28 +124,5 @@ public class StreamingApplication {
 		public ConcurrentHashMap<String, UnicastProcessor<QuoteEvent>> getConnections() {
 			return connections;
 		}
-	}
-
-	@Bean(name = "dataPushExecutor")
-	public ThreadPoolTaskExecutor dataPushExecutor() {
-		ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-		executor.setCorePoolSize(1);
-		executor.setQueueCapacity(100);
-		executor.setMaxPoolSize(1);
-		return executor;
-	}
-
-	@Bean(name = "quoteExecutor")
-	public ThreadPoolTaskExecutor quoteExecutor() {
-		ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-		executor.setCorePoolSize(10);
-		executor.setQueueCapacity(10_000);
-		executor.setMaxPoolSize(10);
-		return executor;
-	}
-
-	@Bean
-	TimedAspect timed(MeterRegistry registry) {
-		return new TimedAspect(registry);
 	}
 }
