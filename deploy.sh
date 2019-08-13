@@ -2,16 +2,10 @@
 
 pkill -f quoteService
 pkill -f streamingService
-pkill -f adminService
 
 dir=$(pwd)
 echo $dir
 rm -rf $dir/deploy/*
-
-mkdir $dir/deploy/admin
-cp $dir/admin/target/*.jar $dir/deploy/admin
-cp $dir/admin/bin/start.sh $dir/deploy/admin
-cp $dir/admin/src/main/resources/* $dir/deploy/admin
 
 mkdir $dir/deploy/streaming-service
 cp $dir/streaming-service/target/*.jar $dir/deploy/streaming-service
