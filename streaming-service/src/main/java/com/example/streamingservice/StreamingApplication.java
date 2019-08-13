@@ -2,9 +2,6 @@ package com.example.streamingservice;
 
 import com.example.streamingservice.event.QuoteEvent;
 import com.example.streamingservice.event.QuoteReloadEvent;
-import io.micrometer.core.annotation.Timed;
-import io.micrometer.core.aop.TimedAspect;
-import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -74,7 +71,6 @@ public class StreamingApplication {
 				.forEach(eventBus::publishEvent);
 	}
 
-	@Timed(value = "quote_load", percentiles = {0.5, 0.95, 0.98})
 	@Async("quoteExecutor")
 	@EventListener
 	public void onQuoteReloadEvent(QuoteReloadEvent e) {
@@ -151,10 +147,5 @@ public class StreamingApplication {
 		executor.setQueueCapacity(10_000);
 		executor.setMaxPoolSize(10);
 		return executor;
-	}
-
-	@Bean
-	TimedAspect timed(MeterRegistry registry) {
-		return new TimedAspect(registry);
 	}
 }
