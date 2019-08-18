@@ -1,3 +1,6 @@
+# Spring boot demo
+There are 8 branches: step1-step8, each shows specific aspect of spring boot
+
 # Steps
 * step1 - simple http service (quote-service): running, configuring, building, deploying
 * step2 - using spring event bus and scheduler, starting work on streaming-service
